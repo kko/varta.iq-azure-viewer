@@ -1,14 +1,14 @@
 # VARTA.iq Azure Viewer
 
-Eigenständiger Docker-Uploader für einen VARTA.iq Energy Manager mit privater Azure-Website und eigener Benutzerverwaltung. Der bisherige lokale Viewer bleibt im separaten Repository [varta.iq-viewer](https://github.com/kko/varta.iq-viewer).
+A standalone Docker uploader for a VARTA.iq Energy Manager, with a private Azure website and its own user management. The original local viewer remains in the separate [varta.iq-viewer](https://github.com/kko/varta.iq-viewer) repository.
 
-Der Collector liest `/v2/point` und `/v2/devices` alle zehn Sekunden über geprüftes HTTPS. Er speichert Pakete vor dem Versand dauerhaft, puffert bei Ausfällen bis zu 30 Tage und lädt nach Wiederherstellung nach. Die lokale Verwaltungsoberfläche zeigt Einstellungen, getrennte Verbindungszustände und die letzten zehn Fehler.
+The collector reads `/v2/point` and `/v2/devices` every ten seconds over verified HTTPS. It saves packets durably before sending them, buffers up to 30 days during outages, and uploads the backlog when connectivity returns. Its local management interface shows settings, separate connection statuses, and the last ten errors.
 
-Azure speichert Messwerte und Aggregate in Table Storage. Static Web Apps Free stellt die Website und die Node.js-22-API bereit. Ein unabhängiger Automation-Runbook bereinigt täglich die Daten außerhalb der letzten 365 UTC-Kalendertage sowie abgelaufene Sitzungen.
+Azure Table Storage holds measurements and aggregates. Static Web Apps Free hosts the website and its Node.js 22 API. An independent Azure Automation runbook runs daily to remove data outside the last 365 UTC calendar days and clean up expired sessions.
 
-## Docker-Collector starten
+## Run the Docker collector
 
-Docker Engine mit Linux-Containern und Compose v2 installieren. Unterstützt werden x64, ARM64 und ARMv7; auf einem ARMv7-Raspberry-Pi wurde der Container gebaut und betrieben.
+Install Docker Engine with Linux container support and Compose v2. Supported architectures are x64, ARM64, and ARMv7. The container has been built and run on an ARMv7 Raspberry Pi.
 
 ```sh
 git clone https://github.com/kko/varta.iq-azure-viewer.git
@@ -16,32 +16,34 @@ cd varta.iq-azure-viewer
 docker compose -f compose.collector.yaml up -d --build
 ```
 
-Verwaltung: [http://localhost:8788](http://localhost:8788). Für den Zugriff im Heimnetz `.env.example` nach `.env` kopieren und `COLLECTOR_ALLOWED_HOSTS` um die IP oder den Hostnamen des Docker-Rechners mit `:8788` ergänzen. Auf dem Pi gegebenenfalls `sudo docker compose …` verwenden.
+Open the management interface at [http://localhost:8788](http://localhost:8788). To access it from your home network, copy `.env.example` to `.env` and add the Docker host's IP address or hostname, including `:8788`, to `COLLECTOR_ALLOWED_HOSTS`. On the Pi, use `sudo docker compose …` if required.
 
-Die lokale Oberfläche verwendet auf Wunsch HTTP ohne Passwort. Dort Gateway-IP, VARTA-API-Key, Azure-Upload-Adresse, Collector-ID und Upload-Schlüssel eintragen, Verbindungen testen und Upload aktivieren. Der Zugriff auf diese Oberfläche gehört ins vertrauenswürdige Heimnetz. Konfiguration und Puffer liegen in eigenen Docker-Volumes; `down -v` löscht sie.
+The local interface uses HTTP without a password. Enter the gateway IP, VARTA API key, Azure upload URL, collector ID, and upload key, then test the connections and enable uploads. Keep access to this interface within a trusted home network. Configuration and buffered packets are stored in separate persistent Docker volumes; `down -v` deletes them.
 
-## Azure einrichten
+A dropdown at the top switches the collector interface between German and English. It translates settings, status messages, and known errors, and saves the language preference in the current browser. Switching languages preserves unsaved input.
 
-Voraussetzungen: PowerShell 7.2+, Azure CLI, Node.js 22.9+ mit npm/npx und passende Bereitstellungs- sowie Rollenzuweisungsrechte im ausgewählten Abonnement.
+## Set up Azure
+
+Requirements: PowerShell 7.2+, Azure CLI, Node.js 22.9+ with npm/npx, and deployment and role-assignment permissions in the selected subscription.
 
 ```powershell
 az login
-./scripts/setup-azure.ps1 -SubscriptionId '<Abonnement-ID>'
+./scripts/setup-azure.ps1 -SubscriptionId '<subscription-id>'
 ```
 
-Das wiederholbar ausführbare Skript veröffentlicht Infrastruktur, Website und API, richtet die tägliche Bereinigung ein und gibt die Upload-Konfiguration sowie den geheimen Einrichtungslink aus. Vorhandene Upload-Schlüssel und Benutzer bleiben erhalten. Speicher- und Transaktionskosten können entstehen; eine vollständig kostenlose Gesamtlösung wird nicht zugesichert.
+The repeatable setup script deploys the infrastructure, website, and API, configures daily cleanup, and outputs the upload configuration and a secret setup link. Existing upload keys and users are preserved. Storage and transaction charges may apply; a completely free deployment is not guaranteed.
 
-## Benutzerverwaltung
+## User management
 
-1. Den persönlichen Einrichtungslink öffnen. Im einmaligen Formular Benutzername, E-Mail und ein eigenes Passwort mit mindestens 15 Zeichen eintragen. Damit entsteht der erste Administrator.
-2. Danach mit Benutzername oder E-Mail anmelden. Der Einrichtungslink kann keinen weiteren Administrator mehr anlegen; es gibt keine öffentliche Selbstregistrierung.
-3. Unter **Benutzerkonto** weitere Betrachter oder Administratoren anlegen, Rollen ändern, Konten sperren oder Startpasswörter zurücksetzen. Weitere Benutzer müssen ihr Startpasswort vor dem Datenzugriff ändern.
+1. Open your private setup link. In the one-time form, enter a username, email address, and your own password of at least 15 characters. This creates the first administrator.
+2. Sign in with your username or email address. The setup link cannot create another administrator after initialization; public self-registration is disabled.
+3. Under **Benutzerkonto** (User account), administrators can add viewers or administrators, change roles, disable accounts, and reset temporary passwords. Additional users must change their temporary password before accessing data.
 
-Die Daten-APIs prüfen jede Sitzung serverseitig. Passwort-Hashes verwenden individuelle Salts und PBKDF2-HMAC-SHA256 mit 600.000 Iterationen. Sitzungscookies sind Secure, HttpOnly und SameSite=Strict und laufen nach acht Stunden ab. Passwort- oder Rollenänderungen und Sperren beenden vorhandene Sitzungen; Anmeldeversuche sind persistent begrenzt. Der letzte aktive Administrator kann nicht gesperrt oder herabgestuft werden. Die Collector-Uploads verwenden unabhängig davon ihren Upload-Schlüssel.
+The data APIs validate each session on the server. Password hashes use individual salts and PBKDF2-HMAC-SHA256 with 600,000 iterations. Session cookies are Secure, HttpOnly, and SameSite=Strict and expire after eight hours. Password changes, role changes, and account disabling invalidate existing sessions. Login attempts are persistently rate limited. The last active administrator cannot be disabled or demoted. Collector uploads use a separate upload key, independently of user sessions.
 
-Es wird keine Microsoft-Organisationsfreigabe benötigt. E-Mail-Adressen sind Anmeldenamen; E-Mail-Versand, MFA und automatische E-Mail-Passwortwiederherstellung sind derzeit nicht eingerichtet. Für größere oder besonders sensible Anwendungen ist ein verwalteter Identitätsanbieter vorzuziehen.
+Microsoft organization consent is not required. Email addresses serve as login identifiers; email delivery, MFA, and automatic email-based password recovery are not currently configured. A managed identity provider is preferable for larger or particularly sensitive applications.
 
-## Entwicklung und Prüfung
+## Development and testing
 
 ```sh
 npm ci
@@ -53,12 +55,10 @@ npm run test:ui
 npm run acceptance -- --accelerated
 ```
 
-Die TLS-Tests benötigen OpenSSL. Die Storage-Integration startet einen lokalen Azurite-Emulator; Browserprüfungen verwenden Playwright. Alle Tests verwenden Testdaten. Mit `npm run prepare:cloud` entsteht die veröffentlichbare Website unter `cloud/site`; dieser Ordner wird nicht versioniert.
+The TLS tests require OpenSSL. Storage integration tests start a local Azurite emulator, and browser tests use Playwright. All tests use test data. Run `npm run prepare:cloud` to generate the deployable website in `cloud/site`; this directory is not tracked in Git.
 
-Die Quelltexte unter `public/` sind die aus dem lokalen Viewer übernommenen Darstellungskomponenten und die Vorlage für den Cloud-Build. Dieses Repository startet ausschließlich den Collector; ein zweiter lokaler Viewer-Server ist nicht enthalten.
+The files in `public/` contain rendering components reused from the local viewer and the template for the cloud build. This repository starts the collector only; it does not include a second local viewer server.
 
-Vollständige Anleitung, Schnittstellen, Kostenmodell, Aufbewahrung und Abnahme: [COLLECTOR.md](COLLECTOR.md). Ein kleines Docker-Bauarchiv lässt sich mit `npm run package:uploader` erzeugen. Gespeicherte Schlüssel, Konfiguration, Messdaten und Puffer gehören nicht ins Repository.
+For detailed setup instructions, APIs, cost assumptions, retention, and acceptance checks, see [COLLECTOR.md](COLLECTOR.md) (German). Run `npm run package:uploader` to create a compact Docker build archive. Never commit saved keys, configuration, measurements, or buffered packets.
 
-Lizenz: [Apache 2.0](LICENSE).
-
-Die lokale Collector-Verwaltung bietet oben eine Dropdown-Auswahl für Deutsch und Englisch. Sie übersetzt Einstellungen, Status und bekannte Fehlermeldungen und speichert die Sprachwahl nur im jeweiligen Browser. Ungespeicherte Eingaben bleiben beim Umschalten erhalten.
+License: [Apache 2.0](LICENSE).
