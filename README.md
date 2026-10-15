@@ -2,6 +2,10 @@
 
 A standalone Docker uploader for a VARTA.iq Energy Manager, with a private Azure website and its own user management. The original local viewer remains in the separate [varta.iq-viewer](https://github.com/kko/varta.iq-viewer) repository.
 
+This viewer displays data collected from a VARTA.iQ Energy Manager on your local network.
+
+Before using the viewer, enable access to the local API in the [VARTA Cloud](https://iq.varta.energy/) under **Settings → Local API** (German interface: **Einstellungen → Lokale API**).
+
 The collector reads `/v2/point` and `/v2/devices` every ten seconds over verified HTTPS. It saves packets durably before sending them, buffers up to 30 days during outages, and uploads the backlog when connectivity returns. Its local management interface shows settings, separate connection statuses, and the last ten errors.
 
 Azure Table Storage holds measurements and aggregates. Static Web Apps Free hosts the website and its Node.js 22 API. An independent Azure Automation runbook runs daily to remove data outside the last 365 UTC calendar days and clean up expired sessions.
