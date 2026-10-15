@@ -1,0 +1,22 @@
+{
+  "name": "varta-iq-azure-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node collector/server.mjs",
+    "test": "node cloud/prepare.mjs && node --test tests/*.test.mjs",
+    "prepare:cloud": "node cloud/prepare.mjs",
+    "test:storage": "node --test tests/storage.integration.mjs",
+    "test:ui": "node cloud/prepare.mjs && node --test tests/ui.integration.mjs",
+    "acceptance": "node scripts/acceptance.mjs",
+    "package:uploader": "node scripts/package-uploader.mjs"
+  },
+  "devDependencies": {
+    "azurite": "3.37.0",
+    "playwright": "1.62.1"
+  }
+}

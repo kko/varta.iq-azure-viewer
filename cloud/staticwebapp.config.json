@@ -1,0 +1,9 @@
+{
+  "platform": { "apiRuntime": "node:22" },
+  "routes": [
+    { "route": "/api/ingest", "methods": ["POST"], "allowedRoles": ["anonymous"] },
+    { "route": "/api/*", "allowedRoles": ["anonymous"] },
+    { "route": "/*", "allowedRoles": ["anonymous"] }
+  ],
+  "globalHeaders": { "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" }
+}
