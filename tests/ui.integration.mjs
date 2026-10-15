@@ -35,7 +35,7 @@ test('browser: cloud year/custom ranges, language switching and mobile layout; c
         let input = ''; for await (const chunk of req) input += chunk;
         if (name === 'settings') { if (req.method === 'PUT') { const value = JSON.parse(input); config = { ...config, ...value, hasUploadKey: Boolean(value.uploadKey) }; delete config.uploadKey; } return json(200, config); }
         if (name.startsWith('test/')) return json(200, { ok: true });
-        if (name === 'status') return json(200, { point: { stale: false }, devices: { stale: false }, upload: { enabled: true, stale: false }, buffer: { count: 4, oldestAt: new Date().toISOString(), dropped: 0 }, errors: [{ at: new Date().toISOString(), source: 'azure', message: 'Beispielfehler' }] });
+        if (name === 'status') return json(200, { point: { stale: false }, devices: { stale: false }, upload: { enabled: true, stale: false }, buffer: { count: 4, oldestAt: new Date().toISOString(), dropped: 0 }, errors: [{ at: new Date().toISOString(), source: 'azure', message: 'Azure: HTTP 401 – Upload-Schlüssel prüfen.' }] });
         return json(404, {});
       }
       const filename = url.pathname === '/' ? 'index.html' : url.pathname.slice(1);
@@ -86,9 +86,23 @@ test('browser: cloud year/custom ranges, language switching and mobile layout; c
     assert.equal(await page.evaluate(async () => (await fetch('/api/auth/users')).status), 403);
     assert.equal((await context.request.post(base + '/api/auth/logout', { headers: { Origin: 'https://evil.example' }, data: {} })).status(), 403);
     mode = 'collector'; await page.goto(base); await page.locator('#admin').waitFor({ state: 'visible' }); assert.equal(await page.locator('#login').count(), 0);
-    await page.fill('[name=uploadUrl]', 'https://example.azurestaticapps.net/api/ingest'); await page.fill('[name=uploadKey]', 'browser-test-key'); await page.check('[name=enabled]'); await page.click('#settings button[type=submit], #settings button:not([type])');
-    await page.waitForFunction(() => document.getElementById('message').textContent.includes('gespeichert'));
-    assert.equal(await page.locator('[name=uploadKey]').inputValue(), ''); assert.match(await page.locator('#buffer').textContent(), /4 Pakete/);
+    await page.fill('[name=uploadUrl]', 'https://example.azurestaticapps.net/api/ingest'); await page.fill('[name=uploadKey]', 'browser-test-key'); await page.check('[name=enabled]');
+    await page.selectOption('#collectorLanguage', 'en');
+    assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+    assert.match(await page.locator('h1').textContent(), /Your connection/);
+    assert.equal(await page.locator('[name=uploadKey]').inputValue(), 'browser-test-key');
+    assert.equal(await page.locator('[name=enabled]').isChecked(), true);
+    assert.match(await page.locator('#errors').textContent(), /Check the upload key/);
+    await page.click('#settings button[type=submit], #settings button:not([type])');
+    await page.waitForFunction(() => document.getElementById('message').textContent.includes('Settings saved'));
+    assert.equal(await page.locator('[name=uploadKey]').inputValue(), ''); assert.match(await page.locator('#buffer').textContent(), /4 packets/);
+    await page.reload(); await page.waitForFunction(() => document.documentElement.lang === 'en');
+    assert.equal(await page.locator('#collectorLanguage').inputValue(), 'en');
+    await page.click('#testVarta'); await page.waitForFunction(() => document.getElementById('message').textContent.includes('Connection test successful'));
+    await page.selectOption('#collectorLanguage', 'de');
+    assert.match(await page.locator('#buffer').textContent(), /4 Pakete/);
+    assert.match(await page.locator('#message').textContent(), /Verbindungstest erfolgreich/);
+    await page.selectOption('#collectorLanguage', 'en');
     await page.screenshot({ path: fileURLToPath(new URL('../artifacts/collector-mobile.png', import.meta.url)), fullPage: true });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
     assert.deepEqual(errors, []);

@@ -20,7 +20,7 @@ const certificates = pathToFileURL(resolve(process.env.GATEWAY_CERT_DIR || './ce
 const engine = new Collector({ config, spool, errors, certificates });
 const port = Number(process.env.PORT || 8788);
 const allowed = new Set([`localhost:${port}`, `127.0.0.1:${port}`, ...(process.env.ALLOWED_HOSTS || '').split(',').map(s => s.trim()).filter(Boolean)]);
-const assets = new Map([['/', ['collector/public/index.html', 'text/html']], ['/app.js', ['collector/public/app.js', 'text/javascript']], ['/collector.css', ['collector/public/collector.css', 'text/css']], ['/style.css', ['public/style.css', 'text/css']]]);
+const assets = new Map([['/i18n.js', ['collector/public/i18n.js', 'text/javascript']], ['/', ['collector/public/index.html', 'text/html']], ['/app.js', ['collector/public/app.js', 'text/javascript']], ['/collector.css', ['collector/public/collector.css', 'text/css']], ['/style.css', ['public/style.css', 'text/css']]]);
 async function body(req) {
   let value = '';
   for await (const chunk of req) { value += chunk; if (value.length > 8192) throw Object.assign(new Error('Anfrage zu groß.'), { status: 413 }); }

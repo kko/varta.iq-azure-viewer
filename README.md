@@ -60,3 +60,5 @@ Die Quelltexte unter `public/` sind die aus dem lokalen Viewer übernommenen Dar
 Vollständige Anleitung, Schnittstellen, Kostenmodell, Aufbewahrung und Abnahme: [COLLECTOR.md](COLLECTOR.md). Ein kleines Docker-Bauarchiv lässt sich mit `npm run package:uploader` erzeugen. Gespeicherte Schlüssel, Konfiguration, Messdaten und Puffer gehören nicht ins Repository.
 
 Lizenz: [Apache 2.0](LICENSE).
+
+Die lokale Collector-Verwaltung bietet oben eine Dropdown-Auswahl für Deutsch und Englisch. Sie übersetzt Einstellungen, Status und bekannte Fehlermeldungen und speichert die Sprachwahl nur im jeweiligen Browser. Ungespeicherte Eingaben bleiben beim Umschalten erhalten.

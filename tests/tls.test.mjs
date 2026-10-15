@@ -47,6 +47,7 @@ for (const secure of [false, true]) test(`${secure ? 'HTTPS' : 'HTTP'} local adm
       req.on('error', reject); req.end(body ? JSON.stringify(body) : undefined);
     });
     assert.equal((await request('/')).status, 200); assert.equal((await request('/api/settings')).status, 200);
+    const languageModule = await request('/i18n.js'); assert.equal(languageModule.status, 200); assert.match(languageModule.headers['content-type'], /javascript/);
     assert.equal((await request('/healthz', { headers: { Host: `evil.test:${port}` } })).status, 403);
     assert.equal((await request('/api/login', { method: 'POST', body: {} })).status, 404);
     const headers = {};
