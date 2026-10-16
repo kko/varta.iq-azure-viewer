@@ -65,4 +65,6 @@ The files in `public/` contain rendering components reused from the local viewer
 
 For detailed setup instructions, APIs, cost assumptions, retention, and acceptance checks, see [COLLECTOR.md](COLLECTOR.md) (German). Run `npm run package:uploader` to create a compact Docker build archive. Never commit saved keys, configuration, measurements, or buffered packets.
 
+The architecture plan, decisions, tradeoffs, and proposed raw-data export API are recorded in [ADR 0001](docs/adr/0001-docker-collector-and-private-azure-viewer.md).
+
 License: [Apache 2.0](LICENSE).
